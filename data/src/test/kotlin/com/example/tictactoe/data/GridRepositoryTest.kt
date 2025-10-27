@@ -184,6 +184,35 @@ class GridRepositoryTest {
 
     // endregion MOVE
 
+    // region RESET
+
+    @Test
+    fun `reset grid - should return success with empty grid`() {
+        // GIVEN
+        // THIS SETUP
+        createRepoAndDisregardInit()
+        // Fill all cells
+        for (row in 0..2) {
+            for (col in 0..2) {
+                val symbol = if ((row + col) % 2 == 0) Symbol.X else Symbol.O
+                repository.playMove(row, col, symbol)
+            }
+        }
+
+        // THIS DATA
+        val expected = RequestResult.Success(emptyGrid)
+
+        // WHEN
+        val result = repository.resetGrid()
+
+        // THEN
+        // THIS SHOULD BE
+        repository shouldHaveGrid emptyGrid
+        result shouldBe expected
+    }
+
+    // endregion RESET
+
     private fun createRepoAndDisregardInit() {
         repository = GridRepositoryImpl()
     }

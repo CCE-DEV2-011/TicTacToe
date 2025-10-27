@@ -22,11 +22,12 @@ import com.example.tictactoe.domain.repository.GridRepository
 
 class GridRepositoryImpl : GridRepository {
 
-    override var grid: MutableList<MutableList<Symbol?>> = MutableList(3) { MutableList(3) { null } }
+    override var grid: MutableList<MutableList<Symbol?>> = buildEmptyGrid()
         private set
 
     override fun resetGrid(): RequestResult<Grid, GridError> {
-        TODO()
+        grid = buildEmptyGrid()
+        return RequestResult.Success(grid)
     }
 
     override fun playMove(row: Int, col: Int, symbol: Symbol): RequestResult<Grid, GridError> = when {
@@ -39,5 +40,7 @@ class GridRepositoryImpl : GridRepository {
         grid[row][col] = symbol
         return RequestResult.Success(grid)
     }
+
+    private fun buildEmptyGrid() = MutableList(3) { MutableList<Symbol?>(3) { null } }
 
 }
