@@ -14,21 +14,33 @@
 
 package com.example.tictactoe.data
 
+import com.example.tictactoe.domain.model.GridError
+import com.example.tictactoe.domain.model.RequestResult
 import com.example.tictactoe.domain.model.Symbol
+import com.example.tictactoe.domain.repository.Grid
 import com.example.tictactoe.domain.repository.GridRepository
-import com.example.tictactoe.domain.repository.MoveResult
 
 class GridRepositoryImpl : GridRepository {
 
-    override var grid: MutableList<MutableList<Symbol?>> = MutableList(3) { MutableList(3) { null } }
+    override var grid: MutableList<MutableList<Symbol?>> = buildEmptyGrid()
         private set
 
-    override fun resetGrid(): MoveResult {
-        TODO()
+    override fun resetGrid(): RequestResult<Grid, GridError> {
+        grid = buildEmptyGrid()
+        return RequestResult.Success(grid)
     }
 
-    override fun playMove(row: Int, col: Int, symbol: Symbol): MoveResult {
-        TODO()
+    override fun playMove(row: Int, col: Int, symbol: Symbol): RequestResult<Grid, GridError> = when {
+        row !in 0..2 || col !in 0..2 -> RequestResult.Error(GridError.OUT_OF_BOUNDS) // out of bounds
+        grid[row][col] != null -> RequestResult.Error(GridError.CELL_ALREADY_TAKEN) // cell already taken
+        else -> playValidMove(row, col, symbol)
     }
+
+    private fun playValidMove(row: Int, col: Int, symbol: Symbol): RequestResult.Success<Grid> {
+        grid[row][col] = symbol
+        return RequestResult.Success(grid)
+    }
+
+    private fun buildEmptyGrid() = MutableList(3) { MutableList<Symbol?>(3) { null } }
 
 }

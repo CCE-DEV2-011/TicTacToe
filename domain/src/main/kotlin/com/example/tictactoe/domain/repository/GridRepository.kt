@@ -18,11 +18,11 @@ import com.example.tictactoe.domain.model.GridError
 import com.example.tictactoe.domain.model.RequestResult
 import com.example.tictactoe.domain.model.Symbol
 
-typealias MoveResult = RequestResult<Array<Array<Symbol?>>, GridError>
+typealias Grid = List<List<Symbol?>>
 
 interface GridRepository {
 
-    val grid: List<List<Symbol?>>
+    val grid: Grid
 
     /**
      * Plays a move on the grid at the specified row and column with the given symbol.
@@ -31,15 +31,15 @@ interface GridRepository {
      * @param col The column index where the move is to be played.
      * @param symbol The symbol to place on the grid (e.g., X or O).
      *
-     * @return A [MoveResult] containing the updated grid or an error if the move
+     * @return A [RequestResult] containing the updated grid or an error if the move
      */
-    fun playMove(row: Int, col: Int, symbol: Symbol): MoveResult
+    fun playMove(row: Int, col: Int, symbol: Symbol): RequestResult<Grid, GridError>
 
     /**
      * Resets the game grid to its initial empty state.
      *
-     * @return A [MoveResult] containing the reset grid or an error if the operation fails.
+     * @return A [RequestResult] containing the reset grid or an error if the operation fails.
      */
-    fun resetGrid(): MoveResult
+    fun resetGrid(): RequestResult<Grid, GridError>
 
 }
