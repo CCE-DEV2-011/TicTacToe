@@ -15,27 +15,32 @@
 package com.example.tictactoe.domain.usecase
 
 import com.example.tictactoe.domain.model.Failure
+import com.example.tictactoe.domain.model.GameState
+import com.example.tictactoe.domain.model.Move
 import com.example.tictactoe.domain.model.RequestResult
-import com.example.tictactoe.domain.model.Symbol
-import com.example.tictactoe.domain.repository.Grid
 import com.example.tictactoe.domain.repository.GridRepository
 
 fun interface PlayMoveUseCase {
 
     /**
      * Plays a move on the grid at the specified row and column with the given symbol.
+     *
+     * @param move The [Move] to be played on the grid
+     *
+     * @return A [RequestResult] containing the updated [GameState] or a [Failure] if the move fails
      */
-    operator fun invoke(row: Int, col: Int, symbol: Symbol): RequestResult<Grid, Failure>
+    operator fun invoke(move: Move): RequestResult<GameState, Failure>
 
 }
 
 class PlayMoveUseCaseImpl(
     private val repository: GridRepository,
+    private val checkGameState: CheckGameStateUseCase,
 ) : PlayMoveUseCase {
 
-    override fun invoke(row: Int, col: Int, symbol: Symbol): RequestResult<Grid, Failure> {
-        // TODO: Check for win or full grid after the move
-        return repository.playMove(row, col, symbol)
+    override fun invoke(move: Move): RequestResult<GameState, Failure> = when (val result = repository.playMove(move)) {
+        is RequestResult.Success -> checkGameState(result.data, move)
+        is RequestResult.Error -> RequestResult.Error(result.error)
     }
 
 }

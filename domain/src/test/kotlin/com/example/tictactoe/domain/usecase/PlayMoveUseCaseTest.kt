@@ -14,7 +14,9 @@
 
 package com.example.tictactoe.domain.usecase
 
+import com.example.tictactoe.domain.model.GameState
 import com.example.tictactoe.domain.model.GridError
+import com.example.tictactoe.domain.model.Move
 import com.example.tictactoe.domain.model.RequestResult
 import com.example.tictactoe.domain.model.Symbol
 import com.example.tictactoe.domain.repository.Grid
@@ -38,45 +40,48 @@ import kotlin.test.Test
 class PlayMoveUseCaseTest {
 
     @MockK private lateinit var repository: GridRepository
+    @MockK private lateinit var checkGameStateUseCase: CheckGameStateUseCase
 
     private lateinit var useCase: PlayMoveUseCase
 
     @Before
     fun setup() {
         repository = mockk()
+        checkGameStateUseCase = mockk()
 
-        useCase = PlayMoveUseCaseImpl(repository)
+        useCase = PlayMoveUseCaseImpl(repository, checkGameStateUseCase)
     }
 
     @After
     fun tearDown() {
-        confirmVerified(repository)
+        confirmVerified(repository, checkGameStateUseCase)
     }
 
     @Test
-    fun `invoke - repo success - not last, not winning - should call repository and return success`() {
+    fun `invoke - repo success - should call repository and return checkState result`() {
         // GIVEN
         // THIS DATA
         val grid = mockk<Grid>()
         val repoResult = RequestResult.Success(grid)
-        val row = 1
-        val col = 2
-        val symbol = Symbol.X
+        val move = Move(row = 1, col = 2, symbol = Symbol.X)
+        val expectedStateResult = mockk<RequestResult.Success<GameState>>()
 
         // THIS BEHAVIOR
-        every { repository.playMove(row, col, symbol) } returns repoResult
+        every { repository.playMove(move) } returns repoResult
+        every { checkGameStateUseCase(grid, move) } returns expectedStateResult
 
         // WHEN
-        val result = useCase(row, col, symbol)
+        val result = useCase(move)
 
         // THEN
         // THIS SHOULD HAVE HAPPENED
         verifySequence {
-            repository.playMove(row, col, symbol)
+            repository.playMove(move)
+            checkGameStateUseCase(grid, move)
         }
 
         // THIS SHOULD BE
-        result shouldBe repoResult
+        result shouldBe expectedStateResult
     }
 
     @Suppress("unused", "UnusedPrivateMember")
@@ -88,20 +93,18 @@ class PlayMoveUseCaseTest {
         // GIVEN
         // THIS DATA
         val repoResult: RequestResult<Grid, GridError> = RequestResult.Error(error)
-        val row = 0
-        val col = 1
-        val symbol = Symbol.O
+        val move = Move(row = 0, col = 1, symbol = Symbol.O)
 
         // THIS BEHAVIOR
-        every { repository.playMove(row, col, symbol) } returns repoResult
+        every { repository.playMove(move) } returns repoResult
 
         // WHEN
-        val result = useCase(row, col, symbol)
+        val result = useCase(move)
 
         // THEN
         // THIS SHOULD HAVE HAPPENED
         verify {
-            repository.playMove(row, col, symbol)
+            repository.playMove(move)
         }
 
         // THIS SHOULD BE

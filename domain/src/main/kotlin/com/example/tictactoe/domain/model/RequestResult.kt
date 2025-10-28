@@ -14,6 +14,8 @@
 
 package com.example.tictactoe.domain.model
 
+import com.example.tictactoe.domain.repository.Grid
+
 interface Failure
 
 sealed interface RequestResult<out D, out E : Failure> {
@@ -24,4 +26,13 @@ sealed interface RequestResult<out D, out E : Failure> {
 enum class GridError : Failure {
     CELL_ALREADY_TAKEN,
     OUT_OF_BOUNDS,
+}
+
+sealed interface GameState {
+    val grid: Grid
+
+    data class InProgress(override val grid: Grid) : GameState
+    data class Draw(override val grid: Grid) : GameState
+    data class XWins(override val grid: Grid) : GameState
+    data class OWins(override val grid: Grid) : GameState
 }
