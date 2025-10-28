@@ -6,7 +6,7 @@ import com.example.tictactoe.domain.model.RequestResult
 import com.example.tictactoe.domain.model.Symbol
 import com.example.tictactoe.domain.repository.Grid
 
-fun interface CheckGameStateUseCase {
+fun interface UpdateGameStateUseCase {
 
     /**
      * Checks the current state of the game after a move.
@@ -16,28 +16,29 @@ fun interface CheckGameStateUseCase {
      * - [GameState.Draw]: If the grid is full and there is no winner.
      * - [GameState.InProgress]: If the game is still ongoing.
      *
-     * @param grid The current [Grid] value.
+     * @param newGrid The current [Grid] value.
      * @param move The last [Move] played.
+     * @param previousState The previous [GameState] before the move was played.
      *
      * @return The current [GameState].
      */
-    operator fun invoke(grid: Grid, move: Move): RequestResult.Success<GameState>
+    operator fun invoke(newGrid: Grid, move: Move, previousState: GameState): RequestResult.Success<GameState>
 }
 
-class CheckGameStateUseCaseImpl : CheckGameStateUseCase {
-    override fun invoke(grid: Grid, move: Move) = RequestResult.Success(
-        if (isWinning(grid, move)) {
+class UpdateGameStateUseCaseImpl : UpdateGameStateUseCase {
+    override fun invoke(newGrid: Grid, move: Move, previousState: GameState) = RequestResult.Success(
+        if (isWinning(newGrid, move)) {
             // If any winning condition is met
             when (move.symbol) {
-                Symbol.X -> GameState.XWins(grid)
-                Symbol.O -> GameState.OWins(grid)
+                Symbol.X -> GameState.XWins(newGrid)
+                Symbol.O -> GameState.OWins(newGrid)
             }
-        } else if (isDraw(grid)) {
+        } else if (isDraw(newGrid)) {
             // If the grid is full and no winner, it's a draw
-            GameState.Draw(grid)
+            GameState.Draw(newGrid, previousState.currentPlayerSymbol)
         } else {
             // Otherwise, game is still in progress
-            GameState.InProgress(grid)
+            GameState.InProgress(newGrid, previousState.currentPlayerSymbol.toggle())
         },
     )
 

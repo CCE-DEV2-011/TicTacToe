@@ -14,6 +14,7 @@
 
 package com.example.tictactoe.domain.usecase
 
+import com.example.tictactoe.domain.model.GameState
 import com.example.tictactoe.domain.model.RequestResult.Success
 import com.example.tictactoe.domain.model.Symbol
 import com.example.tictactoe.domain.repository.GridRepository
@@ -49,10 +50,12 @@ class ResetGridUseCaseTest {
     fun `invoke - should return result from repository`() {
         // GIVEN
         // THIS DATA
-        val expectedResult = Success(List(3) { List<Symbol?>(3) { null } })
+        val grid = List(3) { List<Symbol?>(3) { null } }
+        val repoResult = Success(grid)
+        val expectedResult = Success(GameState.InProgress(grid))
 
         // THIS BEHAVIOR
-        every { repo.resetGrid() } returns expectedResult
+        every { repo.resetGrid() } returns repoResult
 
         // WHEN
         val result = useCase()

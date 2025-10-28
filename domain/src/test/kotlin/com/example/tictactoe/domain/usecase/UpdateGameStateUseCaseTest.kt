@@ -27,13 +27,13 @@ import org.junit.runner.RunWith
 import kotlin.test.Test
 
 @RunWith(JUnitParamsRunner::class)
-class CheckGameStateUseCaseTest {
+class UpdateGameStateUseCaseTest {
 
-    private lateinit var useCase: CheckGameStateUseCase
+    private lateinit var useCase: UpdateGameStateUseCase
 
     @Before
     fun setup() {
-        useCase = CheckGameStateUseCaseImpl()
+        useCase = UpdateGameStateUseCaseImpl()
     }
 
     // Grid that will still be in progress after placing X on 0,0
@@ -58,15 +58,18 @@ class CheckGameStateUseCaseTest {
     @Test
     @Parameters(method = "getInProgressParams")
     fun `invoke - non-winning, non-full grid - should return IN_PROGRESS state`(
-        grid: Grid,
+        previousGrid: Grid,
     ) {
         // GIVEN
         // THIS DATA
+        val previousState = GameState.InProgress(previousGrid)
         val move = Move(row = 0, col = 0, symbol = Symbol.X)
-        val expectedState = GameState.InProgress(grid)
+        val newGrid = previousGrid.map { it.toMutableList() }.toMutableList()
+        newGrid[move.row][move.col] = move.symbol
+        val expectedState = GameState.InProgress(newGrid, Symbol.O)
 
         // WHEN
-        val result = useCase(grid, move)
+        val result = useCase(newGrid, move, previousState)
 
         // THEN
         // THIS SHOULD BE
@@ -161,10 +164,12 @@ class CheckGameStateUseCaseTest {
     ) {
         // GIVEN
         // THIS DATA
-        val expectedState = GameState.Draw(grid)
+        val expectedState = GameState.Draw(grid, move.symbol)
 
         // WHEN
-        val result = useCase(grid, move)
+        val initialGrid = grid.map { it.toMutableList() }.toMutableList()
+        initialGrid[move.row][move.col] = null
+        val result = useCase(grid, move, GameState.InProgress(initialGrid, move.symbol))
 
         // THEN
         // THIS SHOULD BE
@@ -228,13 +233,16 @@ class CheckGameStateUseCaseTest {
     ) {
         // GIVEN
         // THIS DATA
+        val previousGrid = grid.map { it.toMutableList() }.toMutableList()
+        previousGrid[move.row][move.col] = null
+        val previousState = GameState.InProgress(previousGrid, move.symbol)
         val expectedState = when (move.symbol) {
             Symbol.X -> GameState.XWins(grid)
             Symbol.O -> GameState.OWins(grid)
         }
 
         // WHEN
-        val result = useCase(grid, move)
+        val result = useCase(grid, move, previousState)
 
         // THEN
         // THIS SHOULD BE

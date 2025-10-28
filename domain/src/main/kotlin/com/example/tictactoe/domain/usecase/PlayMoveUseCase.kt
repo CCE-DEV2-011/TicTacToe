@@ -25,22 +25,31 @@ fun interface PlayMoveUseCase {
     /**
      * Plays a move on the grid at the specified row and column with the given symbol.
      *
-     * @param move The [Move] to be played on the grid
+     * @param row The row index where the move is to be played
+     * @param col The column index where the move is to be played
+     * @param gameState The current [GameState] before the move is played
      *
      * @return A [RequestResult] containing the updated [GameState] or a [Failure] if the move fails
      */
-    operator fun invoke(move: Move): RequestResult<GameState, Failure>
+    operator fun invoke(row: Int, col: Int, gameState: GameState.InProgress): RequestResult<GameState, Failure>
 
 }
 
 class PlayMoveUseCaseImpl(
     private val repository: GridRepository,
-    private val checkGameState: CheckGameStateUseCase,
+    private val updateGameState: UpdateGameStateUseCase,
 ) : PlayMoveUseCase {
 
-    override fun invoke(move: Move): RequestResult<GameState, Failure> = when (val result = repository.playMove(move)) {
-        is RequestResult.Success -> checkGameState(result.data, move)
-        is RequestResult.Error -> RequestResult.Error(result.error)
+    override fun invoke(
+        row: Int,
+        col: Int,
+        gameState: GameState.InProgress,
+    ): RequestResult<GameState, Failure> {
+        val move = Move(row, col, gameState.currentPlayerSymbol)
+        return when (val result = repository.playMove(move)) {
+            is RequestResult.Success -> updateGameState(result.data, move, gameState)
+            is RequestResult.Error -> RequestResult.Error(result.error)
+        }
     }
 
 }

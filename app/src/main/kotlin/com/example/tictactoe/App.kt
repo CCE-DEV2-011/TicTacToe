@@ -14,11 +14,7 @@
 
 package com.example.tictactoe
 
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.tictactoe.di.allModules
 import com.example.tictactoe.features.board.BoardScreen
@@ -31,9 +27,5 @@ fun App() = KoinApplication(
         modules(allModules)
     },
 ) {
-    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-        BoardScreen(
-            modifier = Modifier.padding(innerPadding),
-        )
-    }
+    BoardScreen()
 }

@@ -18,10 +18,7 @@ import androidx.lifecycle.ViewModel
 import com.example.tictactoe.domain.model.Failure
 import com.example.tictactoe.domain.model.GameState
 import com.example.tictactoe.domain.model.GridError
-import com.example.tictactoe.domain.model.Move
 import com.example.tictactoe.domain.model.RequestResult
-import com.example.tictactoe.domain.model.Symbol
-import com.example.tictactoe.domain.repository.Grid
 import com.example.tictactoe.domain.usecase.PlayMoveUseCase
 import com.example.tictactoe.domain.usecase.ResetGridUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,39 +30,27 @@ class BoardViewModel(
     private val playMove: PlayMoveUseCase,
 ) : ViewModel(), BoardCallback {
 
-    private val _uiState: MutableStateFlow<BoardUiState>
-    val uiState: StateFlow<BoardUiState>
-        get() = _uiState.asStateFlow()
+    private val _gameState: MutableStateFlow<GameState>
+    val gameState: StateFlow<GameState>
+        get() = _gameState.asStateFlow()
+
+    private val inProgressState: GameState.InProgress?
+        get() = _gameState.value as? GameState.InProgress
 
     init {
-        val initialGrid = resetGrid().data
-        _uiState = MutableStateFlow(
-            BoardUiState(
-                grid = initialGrid,
-                currentPlayerSymbol = Symbol.X,
-            ),
-        )
+        val initialState = resetGrid().data
+        _gameState = MutableStateFlow(initialState)
     }
 
     override fun onCellClicked(row: Int, col: Int) {
-        when (val result = playMove(Move(row, col, _uiState.value.currentPlayerSymbol))) {
-            is RequestResult.Success -> handleMoveSuccess(result.data)
-            is RequestResult.Error -> handleMoveFailure(result.error)
+        inProgressState?.let { state ->
+            when (val result = playMove(row, col, state)) {
+                is RequestResult.Success -> _gameState.value = result.data
+                is RequestResult.Error -> handleMoveFailure(result.error)
+            }
+        } ?: run {
+            // TODO toast error
         }
-    }
-
-    private fun handleMoveSuccess(
-        gameState: GameState,
-    ) {
-        _uiState.value = _uiState.value.copy(
-            grid = gameState.grid,
-            currentPlayerSymbol = when (_uiState.value.currentPlayerSymbol) {
-                Symbol.X -> Symbol.O
-                Symbol.O -> Symbol.X
-            },
-        )
-
-        // TODO Toast and disable if draw or win
     }
 
     private fun handleMoveFailure(error: Failure) {
@@ -78,11 +63,6 @@ class BoardViewModel(
             }
         }
     }
-
-    data class BoardUiState(
-        val grid: Grid,
-        val currentPlayerSymbol: Symbol,
-    )
 
 }
 

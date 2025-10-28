@@ -43,9 +43,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.tictactoe.domain.model.GameState
+import com.example.tictactoe.domain.model.GameState.InProgress
 import com.example.tictactoe.domain.model.Symbol
 import com.example.tictactoe.domain.repository.Grid
-import com.example.tictactoe.features.board.BoardViewModel.BoardUiState
 import com.example.tictactoe.ui.Dimens.Padding
 import com.example.tictactoe.ui.Dimens.Size
 import com.example.tictactoe.ui.R
@@ -61,7 +62,7 @@ fun BoardScreen(
     viewModel: BoardViewModel = koinViewModel(),
 ) {
     BoardView(
-        uiState = viewModel.uiState.collectAsStateWithLifecycle().value,
+        state = viewModel.gameState.collectAsStateWithLifecycle().value,
         callback = viewModel,
         modifier = modifier,
     )
@@ -69,56 +70,66 @@ fun BoardScreen(
 
 @Composable
 private fun BoardView(
-    uiState: BoardUiState,
+    state: GameState,
     callback: BoardCallback,
     modifier: Modifier = Modifier,
-) = Column(
-    modifier = modifier
-        .fillMaxSize()
-        .padding(Padding.Screen),
-    horizontalAlignment = CenterHorizontally,
-    verticalArrangement = Center,
-) {
-    HeaderView(uiState)
-    VerticalSpacer(Padding.XXLarge)
-    BoardContentView(uiState, callback)
+) = Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(innerPadding)
+            .padding(Padding.Screen),
+        horizontalAlignment = CenterHorizontally,
+        verticalArrangement = Center,
+    ) {
+        HeaderView(state)
+        VerticalSpacer(Padding.XXLarge)
+        BoardContentView(state, callback)
+    }
 }
 
 @Composable
 private fun HeaderView(
-    uiState: BoardUiState,
+    state: GameState,
 ) {
-    val currentPlayerText = when (uiState.currentPlayerSymbol) {
-        Symbol.X -> stringResource(R.string.current_player_x)
-        Symbol.O -> stringResource(R.string.current_player_o)
+    val label = when (state) {
+        is InProgress -> when (state.currentPlayerSymbol) {
+            Symbol.X -> stringResource(R.string.current_player_x)
+            Symbol.O -> stringResource(R.string.current_player_o)
+        }
+        is GameState.Draw -> stringResource(R.string.draw)
+        is GameState.XWins -> stringResource(R.string.x_wins)
+        is GameState.OWins -> stringResource(R.string.o_wins)
     }
-    CellIcon(uiState.currentPlayerSymbol, stringResource(R.string.current_player_x), stringResource(R.string.current_player_o))
-    Text(currentPlayerText, style = MaterialTheme.typography.titleLarge, color = White)
+    CellIcon(state.currentPlayerSymbol, stringResource(R.string.current_player_x), stringResource(R.string.current_player_o))
+    Text(label, style = MaterialTheme.typography.titleLarge, color = White)
 }
 
 @Composable
 private fun BoardContentView(
-    uiState: BoardUiState,
+    state: GameState,
     callback: BoardCallback,
 ) = Column {
-    RowView(uiState, 0, callback)
+    RowView(state, 0, callback)
     BoardHorizontalDivider()
-    RowView(uiState, 1, callback)
+    RowView(state, 1, callback)
     BoardHorizontalDivider()
-    RowView(uiState, 2, callback)
+    RowView(state, 2, callback)
 }
 
 @Composable
 private fun RowView(
-    uiState: BoardUiState,
+    state: GameState,
     row: Int,
     callback: BoardCallback,
 ) = Row {
-    CellView(uiState.grid[row][0], row, 0, callback)
+    val enabled = state is InProgress
+
+    CellView(state.grid[row][0], row, 0, callback, enabled)
     BoardVerticalDivider()
-    CellView(uiState.grid[row][1], row, 1, callback)
+    CellView(state.grid[row][1], row, 1, callback, enabled)
     BoardVerticalDivider()
-    CellView(uiState.grid[row][2], row, 2, callback)
+    CellView(state.grid[row][2], row, 2, callback, enabled)
 }
 
 @Composable
@@ -127,10 +138,11 @@ private fun CellView(
     row: Int,
     col: Int,
     callback: BoardCallback,
+    enabled: Boolean,
 ) = Box(
     modifier = Modifier
         .size(Size.BoardCell)
-        .clickable { callback.onCellClicked(row, col) },
+        .clickable(enabled) { callback.onCellClicked(row, col) },
     contentAlignment = Alignment.Center,
 ) {
     symbol?.let { symbol ->
@@ -162,22 +174,17 @@ private fun CellIcon(
 private fun PreviewBoard(
     initialGrid: Grid,
 ) = TicTacToeTheme {
-    var uiState by remember {
-        mutableStateOf(
-            BoardUiState(
-                grid = initialGrid,
-                currentPlayerSymbol = Symbol.X,
-            ),
-        )
+    var state by remember {
+        mutableStateOf(InProgress(grid = initialGrid))
     }
 
     val callback = object : BoardCallback {
         override fun onCellClicked(row: Int, col: Int) {
-            if (uiState.grid[row][col] == null) {
-                val newSymbol = if (uiState.currentPlayerSymbol == Symbol.X) Symbol.X else Symbol.O
-                uiState = uiState.copy(
-                    currentPlayerSymbol = if (uiState.currentPlayerSymbol == Symbol.X) Symbol.O else Symbol.X,
-                    grid = uiState.grid.mapIndexed { r, rowList ->
+            if (state.grid[row][col] == null) {
+                val newSymbol = if (state.currentPlayerSymbol == Symbol.X) Symbol.X else Symbol.O
+                state = state.copy(
+                    currentPlayerSymbol = state.currentPlayerSymbol.toggle(),
+                    grid = state.grid.mapIndexed { r, rowList ->
                         rowList.mapIndexed { c, cell ->
                             if (r == row && c == col) newSymbol else cell
                         }
@@ -189,7 +196,7 @@ private fun PreviewBoard(
 
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         BoardView(
-            uiState = uiState,
+            state = state,
             modifier = Modifier.padding(innerPadding),
             callback = callback,
         )

@@ -14,13 +14,12 @@
 
 package com.example.tictactoe.features.board
 
+import com.example.tictactoe.domain.model.GameState
 import com.example.tictactoe.domain.model.GameState.InProgress
-import com.example.tictactoe.domain.model.Move
 import com.example.tictactoe.domain.model.RequestResult.Success
 import com.example.tictactoe.domain.model.Symbol
 import com.example.tictactoe.domain.usecase.PlayMoveUseCase
 import com.example.tictactoe.domain.usecase.ResetGridUseCase
-import com.example.tictactoe.features.board.BoardViewModel.BoardUiState
 import io.kotest.matchers.shouldBe
 import io.mockk.clearAllMocks
 import io.mockk.confirmVerified
@@ -58,15 +57,10 @@ class BoardViewModelTest {
     fun `initialization - should set initial UI state`() {
         // GIVEN
         // THIS DATA
-        val initialGrid = emptyGrid
-        val initialSymbol = Symbol.X
-        val initialUiState = BoardUiState(
-            grid = initialGrid,
-            currentPlayerSymbol = initialSymbol,
-        )
+        val initialState = InProgress(emptyGrid)
 
         // THIS BEHAVIOR
-        every { resetGridUseCase() } returns Success(initialGrid)
+        every { resetGridUseCase() } returns Success(initialState)
 
         // WHEN
         viewModel = BoardViewModel(
@@ -81,11 +75,12 @@ class BoardViewModelTest {
         }
 
         // THIS SHOULD BE
-        viewModel shouldHaveState initialUiState
+        viewModel shouldHaveState initialState
     }
 
     private fun createViewModelAndDisregardInit(withFirstMove: Boolean = false) {
-        every { resetGridUseCase() } returns Success(emptyGrid)
+        val initialState = InProgress(emptyGrid)
+        every { resetGridUseCase() } returns Success(InProgress(emptyGrid))
         viewModel = BoardViewModel(
             resetGrid = resetGridUseCase,
             playMove = playMoveUseCase,
@@ -97,7 +92,7 @@ class BoardViewModelTest {
                 List<Symbol?>(3) { null },
                 List<Symbol?>(3) { null },
             )
-            every { playMoveUseCase(Move(row = 0, col = 0, symbol = Symbol.X)) } returns Success(InProgress(grid = newGrid))
+            every { playMoveUseCase(row = 0, col = 0, initialState) } returns Success(InProgress(newGrid, Symbol.O))
 
             viewModel.onCellClicked(row = 0, col = 0)
         }
@@ -119,20 +114,27 @@ class BoardViewModelTest {
         val nextSymbol = if (currentSymbol == Symbol.X) Symbol.O else Symbol.X
         val row = 1
         val col = 1
-        val move = Move(row, col, currentSymbol)
+        val currentState = InProgress(
+            grid = listOf(
+                listOf(Symbol.X.takeIf { isSecondMove }, null, null),
+                List<Symbol?>(3) { null },
+                List<Symbol?>(3) { null },
+            ),
+            currentPlayerSymbol = currentSymbol,
+        )
         val newGrid = listOf(
             listOf(Symbol.X.takeIf { isSecondMove }, null, null),
             listOf(null, currentSymbol, null),
             List<Symbol?>(3) { null },
         )
-        val expectedUiState = BoardUiState(
+        val expectedUiState = InProgress(
             grid = newGrid,
             currentPlayerSymbol = nextSymbol,
         )
-        val playMoveResult = Success(InProgress(grid = newGrid))
+        val playMoveResult = Success(InProgress(newGrid, nextSymbol))
 
         // THIS BEHAVIOR
-        every { playMoveUseCase(move) } returns playMoveResult
+        every { playMoveUseCase(row, col, currentState) } returns playMoveResult
 
         // WHEN
         viewModel.onCellClicked(row, col)
@@ -140,7 +142,43 @@ class BoardViewModelTest {
         // THEN
         // THIS SHOULD HAVE HAPPENED
         verify {
-            playMoveUseCase(move)
+            playMoveUseCase(row, col, currentState)
+        }
+        // THIS SHOULD BE
+        viewModel shouldHaveState expectedUiState
+    }
+
+    @Suppress("unused", "UnusedPrivateMember")
+    private fun getEndOfGameParams() = arrayOf(
+        mockk<GameState.XWins>(),
+        mockk<GameState.OWins>(),
+        mockk<GameState.Draw>(),
+    )
+
+    @Test
+    @Parameters(method = "getEndOfGameParams")
+    fun `onCellClicked - when move is played successfully - win or draw - should update UI state`(
+        expectedUiState: GameState,
+    ) {
+        // GIVEN
+        // THIS SETUP
+        createViewModelAndDisregardInit(withFirstMove = true)
+
+        // THIS DATA
+        val row = 2
+        val col = 0
+        val playMoveResult = Success(expectedUiState)
+
+        // THIS BEHAVIOR
+        every { playMoveUseCase(row, col, any()) } returns playMoveResult
+
+        // WHEN
+        viewModel.onCellClicked(row, col)
+
+        // THEN
+        // THIS SHOULD HAVE HAPPENED
+        verify {
+            playMoveUseCase(row, col, any())
         }
         // THIS SHOULD BE
         viewModel shouldHaveState expectedUiState
@@ -148,8 +186,8 @@ class BoardViewModelTest {
 
     // TODO Test draw, win and failure cases
 
-    private infix fun BoardViewModel.shouldHaveState(expectedState: BoardUiState) {
-        uiState.value shouldBe expectedState
+    private infix fun BoardViewModel.shouldHaveState(expectedState: GameState) {
+        gameState.value shouldBe expectedState
     }
 
     private val emptyGrid = List(3) { List<Symbol?>(3) { null } }

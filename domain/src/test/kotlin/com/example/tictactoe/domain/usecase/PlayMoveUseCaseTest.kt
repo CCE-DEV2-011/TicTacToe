@@ -40,44 +40,50 @@ import kotlin.test.Test
 class PlayMoveUseCaseTest {
 
     @MockK private lateinit var repository: GridRepository
-    @MockK private lateinit var checkGameStateUseCase: CheckGameStateUseCase
+    @MockK private lateinit var updateGameStateUseCase: UpdateGameStateUseCase
 
     private lateinit var useCase: PlayMoveUseCase
 
     @Before
     fun setup() {
         repository = mockk()
-        checkGameStateUseCase = mockk()
+        updateGameStateUseCase = mockk()
 
-        useCase = PlayMoveUseCaseImpl(repository, checkGameStateUseCase)
+        useCase = PlayMoveUseCaseImpl(repository, updateGameStateUseCase)
     }
 
     @After
     fun tearDown() {
-        confirmVerified(repository, checkGameStateUseCase)
+        confirmVerified(repository, updateGameStateUseCase)
     }
 
     @Test
     fun `invoke - repo success - should call repository and return checkState result`() {
         // GIVEN
         // THIS DATA
+        val row = 1
+        val col = 2
+        val symbol = Symbol.X
         val grid = mockk<Grid>()
         val repoResult = RequestResult.Success(grid)
-        val move = Move(row = 1, col = 2, symbol = Symbol.X)
+        val previousState = mockk<GameState.InProgress> {
+            every { currentPlayerSymbol } returns symbol
+        }
+        val move = Move(row, col, symbol)
         val expectedStateResult = mockk<RequestResult.Success<GameState>>()
 
         // THIS BEHAVIOR
         every { repository.playMove(move) } returns repoResult
-        every { checkGameStateUseCase(grid, move) } returns expectedStateResult
+        every { updateGameStateUseCase(grid, move, previousState) } returns expectedStateResult
 
         // WHEN
-        val result = useCase(move)
+        val result = useCase(row, col, previousState)
 
         // THEN
         // THIS SHOULD HAVE HAPPENED
         verifySequence {
             repository.playMove(move)
-            checkGameStateUseCase(grid, move)
+            updateGameStateUseCase(grid, move, previousState)
         }
 
         // THIS SHOULD BE
@@ -93,13 +99,19 @@ class PlayMoveUseCaseTest {
         // GIVEN
         // THIS DATA
         val repoResult: RequestResult<Grid, GridError> = RequestResult.Error(error)
-        val move = Move(row = 0, col = 1, symbol = Symbol.O)
+        val row = 0
+        val col = 1
+        val symbol = Symbol.O
+        val move = Move(row, col, symbol)
+        val previousState = mockk<GameState.InProgress> {
+            every { currentPlayerSymbol } returns symbol
+        }
 
         // THIS BEHAVIOR
         every { repository.playMove(move) } returns repoResult
 
         // WHEN
-        val result = useCase(move)
+        val result = useCase(row, col, previousState)
 
         // THEN
         // THIS SHOULD HAVE HAPPENED
