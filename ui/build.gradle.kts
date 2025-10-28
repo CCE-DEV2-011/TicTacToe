@@ -5,15 +5,13 @@ plugins {
 }
 
 android {
-    namespace = "com.example.tictactoe.features"
+    namespace = "com.example.tictactoe.ui"
     compileSdk {
         version = release(libs.versions.android.compileSdk.get().toInt())
     }
 
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -37,8 +35,6 @@ android {
 }
 
 dependencies {
-    implementation(project(":domain"))
-    implementation(project(":ui"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -48,15 +44,5 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
-    implementation(platform(libs.koin.bom))
-    implementation(libs.bundles.koin)
 
-    testImplementation(libs.kotlin.test)
-    testImplementation(libs.junit)
-    testImplementation(libs.kotest.assertions)
-    testImplementation(libs.mockk)
-    testImplementation(libs.junitparams)
-
-    debugImplementation(libs.androidx.compose.ui.tooling)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
