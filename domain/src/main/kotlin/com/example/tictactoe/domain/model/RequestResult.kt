@@ -16,7 +16,7 @@ package com.example.tictactoe.domain.model
 
 import com.example.tictactoe.domain.repository.Grid
 
-interface Failure
+sealed interface Failure
 
 sealed interface RequestResult<out D, out E : Failure> {
     data class Success<D>(val data: D) : RequestResult<D, Nothing>

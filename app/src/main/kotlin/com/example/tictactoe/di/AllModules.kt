@@ -15,8 +15,10 @@
 package com.example.tictactoe.di
 
 import com.example.tictactoe.domain.di.domainModule
+import com.example.tictactoe.features.di.featuresModule
 
 internal val allModules = listOf(
     dataModule,
     domainModule,
+    featuresModule,
 )

@@ -26,7 +26,7 @@ class GridRepositoryImpl : GridRepository {
     override var grid: MutableList<MutableList<Symbol?>> = buildEmptyGrid()
         private set
 
-    override fun resetGrid(): RequestResult<Grid, GridError> {
+    override fun resetGrid(): RequestResult.Success<Grid> {
         grid = buildEmptyGrid()
         return RequestResult.Success(grid)
     }

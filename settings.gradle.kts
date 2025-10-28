@@ -1,5 +1,3 @@
-import org.gradle.api.initialization.resolve.RepositoriesMode
-
 pluginManagement {
     repositories {
         google {
@@ -26,3 +24,4 @@ rootProject.name = "TicTacToe"
 include(":app")
 include(":data")
 include(":domain")
+include(":features")

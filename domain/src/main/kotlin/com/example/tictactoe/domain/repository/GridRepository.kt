@@ -39,6 +39,6 @@ interface GridRepository {
      *
      * @return A [RequestResult] containing the reset grid or an error if the operation fails.
      */
-    fun resetGrid(): RequestResult<Grid, GridError>
+    fun resetGrid(): RequestResult.Success<Grid>
 
 }

@@ -14,12 +14,18 @@
 
 package com.example.tictactoe.domain.di
 
+import com.example.tictactoe.domain.usecase.CheckGameStateUseCase
+import com.example.tictactoe.domain.usecase.CheckGameStateUseCaseImpl
 import com.example.tictactoe.domain.usecase.PlayMoveUseCase
 import com.example.tictactoe.domain.usecase.PlayMoveUseCaseImpl
+import com.example.tictactoe.domain.usecase.ResetGridUseCase
+import com.example.tictactoe.domain.usecase.ResetGridUseCaseImpl
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
 
 val domainModule = module {
     factoryOf(::PlayMoveUseCaseImpl) { bind<PlayMoveUseCase>() }
+    factoryOf(::CheckGameStateUseCaseImpl) { bind<CheckGameStateUseCase>() }
+    factoryOf(::ResetGridUseCaseImpl) { bind<ResetGridUseCase>() }
 }
