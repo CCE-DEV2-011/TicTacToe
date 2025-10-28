@@ -12,16 +12,11 @@
 * limitations under the License.
 */
 
-package com.example.tictactoe.domain.model
+package com.example.tictactoe.di
 
-interface Failure
+import com.example.tictactoe.domain.di.domainModule
 
-sealed interface RequestResult<out D, out E : Failure> {
-    data class Success<D>(val data: D) : RequestResult<D, Nothing>
-    data class Error<E : Failure>(val error: E) : RequestResult<Nothing, E>
-}
-
-enum class GridError : Failure {
-    CELL_ALREADY_TAKEN,
-    OUT_OF_BOUNDS,
-}
+internal val allModules = listOf(
+    dataModule,
+    domainModule,
+)

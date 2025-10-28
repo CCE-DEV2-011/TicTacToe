@@ -12,16 +12,14 @@
 * limitations under the License.
 */
 
-package com.example.tictactoe.domain.model
+package com.example.tictactoe.domain.di
 
-interface Failure
+import com.example.tictactoe.domain.usecase.PlayMoveUseCase
+import com.example.tictactoe.domain.usecase.PlayMoveUseCaseImpl
+import org.koin.core.module.dsl.bind
+import org.koin.core.module.dsl.factoryOf
+import org.koin.dsl.module
 
-sealed interface RequestResult<out D, out E : Failure> {
-    data class Success<D>(val data: D) : RequestResult<D, Nothing>
-    data class Error<E : Failure>(val error: E) : RequestResult<Nothing, E>
-}
-
-enum class GridError : Failure {
-    CELL_ALREADY_TAKEN,
-    OUT_OF_BOUNDS,
+val domainModule = module {
+    factoryOf(::PlayMoveUseCaseImpl) { bind<PlayMoveUseCase>() }
 }
