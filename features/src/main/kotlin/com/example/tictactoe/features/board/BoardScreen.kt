@@ -14,6 +14,7 @@
 
 package com.example.tictactoe.features.board
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement.Center
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,6 +31,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
@@ -39,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tictactoe.domain.model.Symbol
+import com.example.tictactoe.domain.repository.Grid
 import com.example.tictactoe.features.board.BoardViewModel.BoardUiState
 import com.example.tictactoe.ui.Dimens.Padding
 import com.example.tictactoe.ui.Dimens.Size
@@ -56,6 +62,7 @@ fun BoardScreen(
 ) {
     BoardView(
         uiState = viewModel.uiState.collectAsStateWithLifecycle().value,
+        callback = viewModel,
         modifier = modifier,
     )
 }
@@ -63,6 +70,7 @@ fun BoardScreen(
 @Composable
 private fun BoardView(
     uiState: BoardUiState,
+    callback: BoardCallback,
     modifier: Modifier = Modifier,
 ) = Column(
     modifier = modifier
@@ -73,7 +81,7 @@ private fun BoardView(
 ) {
     HeaderView(uiState)
     VerticalSpacer(Padding.XXLarge)
-    BoardContentView(uiState)
+    BoardContentView(uiState, callback)
 }
 
 @Composable
@@ -91,34 +99,41 @@ private fun HeaderView(
 @Composable
 private fun BoardContentView(
     uiState: BoardUiState,
+    callback: BoardCallback,
 ) = Column {
-    RowView(uiState, 0)
+    RowView(uiState, 0, callback)
     BoardHorizontalDivider()
-    RowView(uiState, 1)
+    RowView(uiState, 1, callback)
     BoardHorizontalDivider()
-    RowView(uiState, 2)
+    RowView(uiState, 2, callback)
 }
 
 @Composable
 private fun RowView(
     uiState: BoardUiState,
-    rowIndex: Int,
+    row: Int,
+    callback: BoardCallback,
 ) = Row {
-    CellView(uiState.grid[rowIndex][0])
+    CellView(uiState.grid[row][0], row, 0, callback)
     BoardVerticalDivider()
-    CellView(uiState.grid[rowIndex][1])
+    CellView(uiState.grid[row][1], row, 1, callback)
     BoardVerticalDivider()
-    CellView(uiState.grid[rowIndex][2])
+    CellView(uiState.grid[row][2], row, 2, callback)
 }
 
 @Composable
 private fun CellView(
     symbol: Symbol?,
+    row: Int,
+    col: Int,
+    callback: BoardCallback,
 ) = Box(
-    modifier = Modifier.size(Size.BoardCell),
+    modifier = Modifier
+        .size(Size.BoardCell)
+        .clickable { callback.onCellClicked(row, col) },
     contentAlignment = Alignment.Center,
 ) {
-    symbol?.let {
+    symbol?.let { symbol ->
         CellIcon(symbol, "X", "O")
     }
 }
@@ -142,14 +157,41 @@ private fun CellIcon(
     )
 }
 
+@Suppress("kotlin:S3776") // Complexity OK for a preview function
 @Composable
 private fun PreviewBoard(
-    uiState: BoardUiState,
+    initialGrid: Grid,
 ) = TicTacToeTheme {
+    var uiState by remember {
+        mutableStateOf(
+            BoardUiState(
+                grid = initialGrid,
+                currentPlayerSymbol = Symbol.X,
+            ),
+        )
+    }
+
+    val callback = object : BoardCallback {
+        override fun onCellClicked(row: Int, col: Int) {
+            if (uiState.grid[row][col] == null) {
+                val newSymbol = if (uiState.currentPlayerSymbol == Symbol.X) Symbol.X else Symbol.O
+                uiState = uiState.copy(
+                    currentPlayerSymbol = if (uiState.currentPlayerSymbol == Symbol.X) Symbol.O else Symbol.X,
+                    grid = uiState.grid.mapIndexed { r, rowList ->
+                        rowList.mapIndexed { c, cell ->
+                            if (r == row && c == col) newSymbol else cell
+                        }
+                    },
+                )
+            }
+        }
+    }
+
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         BoardView(
             uiState = uiState,
             modifier = Modifier.padding(innerPadding),
+            callback = callback,
         )
     }
 }
@@ -163,22 +205,14 @@ private fun BoardHorizontalDivider() =
 
 @Preview
 @Composable
-private fun EmptyBoardPreview() = PreviewBoard(
-    uiState = BoardUiState(
-        grid = List(3) { List(3) { null } },
-        currentPlayerSymbol = Symbol.X,
-    ),
-)
+private fun EmptyBoardPreview() = PreviewBoard(List(3) { List(3) { null } })
 
 @Preview
 @Composable
 private fun FullBoardPreview() = PreviewBoard(
-    uiState = BoardUiState(
-        grid = listOf(
-            listOf(Symbol.X, Symbol.O, Symbol.X),
-            listOf(Symbol.O, Symbol.X, Symbol.O),
-            listOf(Symbol.X, Symbol.O, Symbol.X),
-        ),
-        currentPlayerSymbol = Symbol.X,
+    initialGrid = listOf(
+        listOf(Symbol.X, Symbol.O, Symbol.X),
+        listOf(Symbol.O, Symbol.X, Symbol.O),
+        listOf(Symbol.X, Symbol.O, Symbol.X),
     ),
 )
