@@ -8,4 +8,6 @@
     <string name="confirm">Confirm</string>
     <string name="cell_already_taken">Cell already taken. Choose another one.</string>
     <string name="unexpected_error">Unexpected error</string>
+    <string name="new_game">New Game</string>
+    <string name="reset_game">Reset Game</string>
 </resources>

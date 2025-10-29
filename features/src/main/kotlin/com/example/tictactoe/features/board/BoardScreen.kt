@@ -26,12 +26,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -107,6 +108,8 @@ private fun BoardView(
             HeaderView(state)
             VerticalSpacer(Padding.XXLarge)
             BoardContentView(state, callback)
+            VerticalSpacer(Padding.XXLarge)
+            ResetView(state, callback)
         }
     }
 }
@@ -125,7 +128,7 @@ private fun HeaderView(
         is GameState.OWins -> stringResource(R.string.o_wins)
     }
     CellIcon(state.currentPlayerSymbol, stringResource(R.string.current_player_x), stringResource(R.string.current_player_o))
-    Text(label, style = MaterialTheme.typography.titleLarge, color = White)
+    Text(label, style = typography.titleLarge, color = White)
 }
 
 @Composable
@@ -192,6 +195,19 @@ private fun CellIcon(
     )
 }
 
+@Composable
+private fun ResetView(
+    gameState: GameState,
+    callback: BoardCallback,
+) {
+    val textRes = when (gameState) {
+        is InProgress -> R.string.reset_game
+        is GameState.Draw, is GameState.XWins, is GameState.OWins -> R.string.new_game
+    }
+
+    TextButton(onClick = callback::onResetGameClicked) { Text(stringResource(textRes), style = typography.titleLarge) }
+}
+
 @Suppress("kotlin:S3776") // Complexity OK for a preview function
 @Composable
 private fun PreviewBoard(
@@ -220,6 +236,11 @@ private fun PreviewBoard(
         }
 
         override fun dismissSnackbar() {
+            errorMessage = null
+        }
+
+        override fun onResetGameClicked() {
+            state = InProgress(grid = List(3) { List(3) { null } })
             errorMessage = null
         }
     }
