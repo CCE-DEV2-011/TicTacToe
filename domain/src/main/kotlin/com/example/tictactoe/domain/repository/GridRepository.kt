@@ -15,6 +15,7 @@
 package com.example.tictactoe.domain.repository
 
 import com.example.tictactoe.domain.model.GridError
+import com.example.tictactoe.domain.model.Move
 import com.example.tictactoe.domain.model.RequestResult
 import com.example.tictactoe.domain.model.Symbol
 
@@ -27,19 +28,17 @@ interface GridRepository {
     /**
      * Plays a move on the grid at the specified row and column with the given symbol.
      *
-     * @param row The row index where the move is to be played.
-     * @param col The column index where the move is to be played.
-     * @param symbol The symbol to place on the grid (e.g., X or O).
+     * @param move The [Move] to be played on the grid
      *
      * @return A [RequestResult] containing the updated grid or an error if the move
      */
-    fun playMove(row: Int, col: Int, symbol: Symbol): RequestResult<Grid, GridError>
+    fun playMove(move: Move): RequestResult<Grid, GridError>
 
     /**
      * Resets the game grid to its initial empty state.
      *
      * @return A [RequestResult] containing the reset grid or an error if the operation fails.
      */
-    fun resetGrid(): RequestResult<Grid, GridError>
+    fun resetGrid(): RequestResult.Success<Grid>
 
 }

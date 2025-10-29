@@ -1,7 +1,3 @@
-import org.gradle.kotlin.dsl.java
-import org.gradle.kotlin.dsl.kotlin
-import org.gradle.kotlin.dsl.libs
-
 plugins {
     id("java-library")
     alias(libs.plugins.jetbrains.kotlin.jvm)
@@ -17,6 +13,9 @@ kotlin {
 }
 
 dependencies {
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.core)
+
     testImplementation(libs.kotlin.test)
     testImplementation(libs.junit)
     testImplementation(libs.kotest.assertions)

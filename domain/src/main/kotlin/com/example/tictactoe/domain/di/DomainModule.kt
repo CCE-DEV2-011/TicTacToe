@@ -1,0 +1,31 @@
+/*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     https://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
+package com.example.tictactoe.domain.di
+
+import com.example.tictactoe.domain.usecase.PlayMoveUseCase
+import com.example.tictactoe.domain.usecase.PlayMoveUseCaseImpl
+import com.example.tictactoe.domain.usecase.ResetGridUseCase
+import com.example.tictactoe.domain.usecase.ResetGridUseCaseImpl
+import com.example.tictactoe.domain.usecase.UpdateGameStateUseCase
+import com.example.tictactoe.domain.usecase.UpdateGameStateUseCaseImpl
+import org.koin.core.module.dsl.bind
+import org.koin.core.module.dsl.factoryOf
+import org.koin.dsl.module
+
+val domainModule = module {
+    factoryOf(::PlayMoveUseCaseImpl) { bind<PlayMoveUseCase>() }
+    factoryOf(::UpdateGameStateUseCaseImpl) { bind<UpdateGameStateUseCase>() }
+    factoryOf(::ResetGridUseCaseImpl) { bind<ResetGridUseCase>() }
+}

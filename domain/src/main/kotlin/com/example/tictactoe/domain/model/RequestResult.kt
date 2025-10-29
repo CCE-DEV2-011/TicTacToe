@@ -14,7 +14,9 @@
 
 package com.example.tictactoe.domain.model
 
-interface Failure
+import com.example.tictactoe.domain.repository.Grid
+
+sealed interface Failure
 
 sealed interface RequestResult<out D, out E : Failure> {
     data class Success<D>(val data: D) : RequestResult<D, Nothing>
@@ -22,7 +24,23 @@ sealed interface RequestResult<out D, out E : Failure> {
 }
 
 enum class GridError : Failure {
-    INITIALIZATION_FAILED,
     CELL_ALREADY_TAKEN,
     OUT_OF_BOUNDS,
+}
+
+sealed interface GameState {
+    val grid: Grid
+    val currentPlayerSymbol: Symbol
+
+    data class InProgress(override val grid: Grid, override val currentPlayerSymbol: Symbol = Symbol.X) : GameState
+
+    data class Draw(override val grid: Grid, override val currentPlayerSymbol: Symbol) : GameState
+
+    data class XWins(override val grid: Grid) : GameState {
+        override val currentPlayerSymbol: Symbol = Symbol.X
+    }
+
+    data class OWins(override val grid: Grid) : GameState {
+        override val currentPlayerSymbol: Symbol = Symbol.O
+    }
 }
