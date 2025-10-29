@@ -29,7 +29,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class BoardViewModel(
-    resetGrid: ResetGridUseCase,
+    private val resetGrid: ResetGridUseCase,
     private val playMove: PlayMoveUseCase,
     private val resourceProvider: ResourceProvider,
 ) : ViewModel(), BoardCallback {
@@ -77,9 +77,14 @@ class BoardViewModel(
         _snackbarMessage.value = null
     }
 
+    override fun onResetGameClicked() {
+        _gameState.value = resetGrid().data
+    }
+
 }
 
 interface BoardCallback {
     fun onCellClicked(row: Int, col: Int)
     fun dismissSnackbar()
+    fun onResetGameClicked()
 }
