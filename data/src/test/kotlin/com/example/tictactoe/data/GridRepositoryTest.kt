@@ -15,6 +15,7 @@
 package com.example.tictactoe.data
 
 import com.example.tictactoe.domain.model.GridError
+import com.example.tictactoe.domain.model.Move
 import com.example.tictactoe.domain.model.RequestResult
 import com.example.tictactoe.domain.model.Symbol
 import com.example.tictactoe.domain.repository.Grid
@@ -70,13 +71,14 @@ class GridRepositoryTest {
         createRepoAndDisregardInit()
 
         // THIS DATA
+        val move = Move(row, col, Symbol.X)
         val expectedGrid = buildEmptyGrid { grid ->
             grid[row][col] = Symbol.X
         }
         val expected = RequestResult.Success(expectedGrid)
 
         // WHEN
-        val result = repository.playMove(row, col, Symbol.X)
+        val result = repository.playMove(move)
 
         // THEN
         // THIS SHOULD BE
@@ -105,11 +107,12 @@ class GridRepositoryTest {
         createRepoAndDisregardInit()
 
         // THIS DATA
+        val move = Move(row, col, Symbol.X)
         val expectedGrid = emptyGrid
         val expected = RequestResult.Error(GridError.OUT_OF_BOUNDS)
 
         // WHEN
-        val result = repository.playMove(row, col, Symbol.X)
+        val result = repository.playMove(move)
 
         // THEN
         // THIS SHOULD BE
@@ -118,34 +121,34 @@ class GridRepositoryTest {
     }
 
     @Suppress("unused", "UnusedPrivateMember", "UNCHECKED_CAST")
-    private fun getCellTakenParams(): List<Array<Any>> = getFirstMoveParams().flatMap { pos ->
+    private fun getCellTakenParams(): List<Move> = getFirstMoveParams().flatMap { pos ->
         listOf(
-            arrayOf(pos[0], pos[1], Symbol.X),
-            arrayOf(pos[0], pos[1], Symbol.O),
+            Move(pos[0], pos[1], Symbol.X),
+            Move(pos[0], pos[1], Symbol.O),
         )
     }
 
     @Test
     @Parameters(method = "getCellTakenParams")
     fun `second move - cell already taken - should return error and not update grid`(
-        row: Int,
-        col: Int,
-        firstSymbol: Symbol,
+        initialMove: Move,
     ) {
         // GIVEN
         // THIS SETUP
         createRepoAndDisregardInit()
-        repository.playMove(row, col, firstSymbol) // Fill the cell
+        repository.playMove(initialMove) // Fill the cell
 
         // THIS DATA
-        val symbolToPlay = if (firstSymbol == Symbol.X) Symbol.O else Symbol.X
+        val moveToPlay = initialMove.copy(
+            symbol = if (initialMove.symbol == Symbol.X) Symbol.O else Symbol.X,
+        )
         val expectedGrid = buildEmptyGrid { grid ->
-            grid[row][col] = firstSymbol
+            grid[initialMove.row][initialMove.col] = initialMove.symbol
         }
         val expected = RequestResult.Error(GridError.CELL_ALREADY_TAKEN)
 
         // WHEN
-        val result = repository.playMove(row, col, symbolToPlay)
+        val result = repository.playMove(moveToPlay)
 
         // THEN
         // THIS SHOULD BE
@@ -162,11 +165,12 @@ class GridRepositoryTest {
         // GIVEN
         // THIS SETUP
         createRepoAndDisregardInit()
-        repository.playMove(firstMoveRow, firstMoveCol, Symbol.X) // First move
+        repository.playMove(Move(firstMoveRow, firstMoveCol, Symbol.X)) // First move
 
         // THIS DATA
         val secondMoveRow = (0..2).first { it != firstMoveRow }
         val secondMoveCol = (0..2).first { it != firstMoveCol }
+        val secondMove = Move(secondMoveRow, secondMoveCol, Symbol.O)
         val expectedGrid = buildEmptyGrid { grid ->
             grid[firstMoveRow][firstMoveCol] = Symbol.X
             grid[secondMoveRow][secondMoveCol] = Symbol.O
@@ -174,7 +178,7 @@ class GridRepositoryTest {
         val expected = RequestResult.Success(expectedGrid)
 
         // WHEN
-        val result = repository.playMove(secondMoveRow, secondMoveCol, Symbol.O)
+        val result = repository.playMove(secondMove)
 
         // THEN
         // THIS SHOULD BE
@@ -195,7 +199,7 @@ class GridRepositoryTest {
         for (row in 0..2) {
             for (col in 0..2) {
                 val symbol = if ((row + col) % 2 == 0) Symbol.X else Symbol.O
-                repository.playMove(row, col, symbol)
+                repository.playMove(Move(row, col, symbol))
             }
         }
 
