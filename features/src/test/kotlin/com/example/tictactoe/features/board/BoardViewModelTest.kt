@@ -25,6 +25,7 @@ import com.example.tictactoe.domain.usecase.PlayMoveUseCase
 import com.example.tictactoe.domain.usecase.ResetGridUseCase
 import com.example.tictactoe.features.provider.ResourceProvider
 import com.example.tictactoe.ui.R
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.mockk.clearAllMocks
 import io.mockk.confirmVerified
@@ -230,11 +231,86 @@ class BoardViewModelTest {
         viewModel shouldHaveSnackbarMessage errorMessage
     }
 
+    @Test
+    fun `onCellClicked - when not in progress - should show unexpected error snackbar`() {
+        // GIVEN
+        // THIS SETUP
+        createViewModelAndDisregardInit()
+        every { playMoveUseCase(any(), any(), any()) } returns Success(GameState.XWins(emptyGrid))
+        viewModel.onCellClicked(0, 0)
+        clearAllMocks()
+
+        // THIS DATA
+        val errorMessage = "unexpected error"
+
+        // THIS BEHAVIOR
+        every { resourceProvider.getString(R.string.unexpected_error) } returns errorMessage
+
+        // WHEN
+        viewModel.onCellClicked(0, 0)
+
+        // THEN
+        // THIS SHOULD HAVE HAPPENED
+        verify {
+            resourceProvider.getString(R.string.unexpected_error)
+        }
+
+        // THIS SHOULD BE
+        viewModel shouldHaveSnackbarMessage errorMessage
+    }
+
+    @Test
+    fun `dismissSnackbar - should clear snackbar message`() {
+        // GIVEN
+        // THIS SETUP
+        createViewModelAndDisregardInit()
+        every { playMoveUseCase(any(), any(), any()) } returns Error(GridError.CELL_ALREADY_TAKEN)
+        every { resourceProvider.getString(R.string.cell_already_taken) } returns "errorMessage"
+        viewModel.onCellClicked(0, 0)
+        clearAllMocks()
+        viewModel.snackbarMessage.value.shouldNotBeNull()
+
+        // THIS DATA
+        val expectedUiState = InProgress(emptyGrid)
+
+        // WHEN
+        viewModel.dismissSnackbar()
+
+        // THEN
+        // THIS SHOULD BE
+        viewModel shouldHaveState expectedUiState
+        viewModel shouldHaveSnackbarMessage null
+    }
+
+    @Test
+    fun `onResetGameClicked - should reset the game state`() {
+        // GIVEN
+        // THIS SETUP
+        createViewModelAndDisregardInit(withFirstMove = true)
+
+        // THIS DATA
+        val resetState = InProgress(emptyGrid)
+
+        // THIS BEHAVIOR
+        every { resetGridUseCase() } returns Success(resetState)
+
+        // WHEN
+        viewModel.onResetGameClicked()
+
+        // THEN
+        // THIS SHOULD HAVE HAPPENED
+        verify {
+            resetGridUseCase()
+        }
+        // THIS SHOULD BE
+        viewModel shouldHaveState resetState
+    }
+
     private infix fun BoardViewModel.shouldHaveState(expectedState: GameState) {
         gameState.value shouldBe expectedState
     }
 
-    private infix fun BoardViewModel.shouldHaveSnackbarMessage(message: String) {
+    private infix fun BoardViewModel.shouldHaveSnackbarMessage(message: String?) {
         viewModel.snackbarMessage.value shouldBe message
     }
 
