@@ -33,7 +33,9 @@ sealed interface GameState {
     val currentPlayerSymbol: Symbol
 
     data class InProgress(override val grid: Grid, override val currentPlayerSymbol: Symbol = Symbol.X) : GameState
+
     data class Draw(override val grid: Grid, override val currentPlayerSymbol: Symbol) : GameState
+
     data class XWins(override val grid: Grid) : GameState {
         override val currentPlayerSymbol: Symbol = Symbol.X
     }

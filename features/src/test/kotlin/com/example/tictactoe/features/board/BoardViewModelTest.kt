@@ -14,12 +14,17 @@
 
 package com.example.tictactoe.features.board
 
+import com.example.tictactoe.domain.model.Failure
 import com.example.tictactoe.domain.model.GameState
 import com.example.tictactoe.domain.model.GameState.InProgress
+import com.example.tictactoe.domain.model.GridError
+import com.example.tictactoe.domain.model.RequestResult.Error
 import com.example.tictactoe.domain.model.RequestResult.Success
 import com.example.tictactoe.domain.model.Symbol
 import com.example.tictactoe.domain.usecase.PlayMoveUseCase
 import com.example.tictactoe.domain.usecase.ResetGridUseCase
+import com.example.tictactoe.features.provider.ResourceProvider
+import com.example.tictactoe.ui.R
 import io.kotest.matchers.shouldBe
 import io.mockk.clearAllMocks
 import io.mockk.confirmVerified
@@ -39,6 +44,7 @@ class BoardViewModelTest {
 
     @MockK private lateinit var resetGridUseCase: ResetGridUseCase
     @MockK private lateinit var playMoveUseCase: PlayMoveUseCase
+    @MockK private lateinit var resourceProvider: ResourceProvider
 
     private lateinit var viewModel: BoardViewModel
 
@@ -46,11 +52,12 @@ class BoardViewModelTest {
     fun setUp() {
         resetGridUseCase = mockk()
         playMoveUseCase = mockk()
+        resourceProvider = mockk()
     }
 
     @After
     fun tearDown() {
-        confirmVerified(resetGridUseCase, playMoveUseCase)
+        confirmVerified(resetGridUseCase, playMoveUseCase, resourceProvider)
     }
 
     @Test
@@ -63,10 +70,7 @@ class BoardViewModelTest {
         every { resetGridUseCase() } returns Success(initialState)
 
         // WHEN
-        viewModel = BoardViewModel(
-            resetGrid = resetGridUseCase,
-            playMove = playMoveUseCase,
-        )
+        viewModel = BoardViewModel(resetGridUseCase, playMoveUseCase, resourceProvider)
 
         // THEN
         // THIS SHOULD HAVE HAPPENED
@@ -81,10 +85,7 @@ class BoardViewModelTest {
     private fun createViewModelAndDisregardInit(withFirstMove: Boolean = false) {
         val initialState = InProgress(emptyGrid)
         every { resetGridUseCase() } returns Success(InProgress(emptyGrid))
-        viewModel = BoardViewModel(
-            resetGrid = resetGridUseCase,
-            playMove = playMoveUseCase,
-        )
+        viewModel = BoardViewModel(resetGridUseCase, playMoveUseCase, resourceProvider)
 
         if (withFirstMove) {
             val newGrid = listOf(
@@ -184,10 +185,57 @@ class BoardViewModelTest {
         viewModel shouldHaveState expectedUiState
     }
 
-    // TODO Test draw, win and failure cases
+    @Suppress("unused", "UnusedPrivateMember")
+    private fun getMoveErrorParams() = arrayOf(
+        GridError.CELL_ALREADY_TAKEN,
+        GridError.OUT_OF_BOUNDS,
+        mockk<Failure>(),
+    )
+
+    @Test
+    @Parameters(method = "getMoveErrorParams")
+    fun `onCellClick - when move returns error - state should not update and toast should be displayed`(
+        failure: Failure,
+    ) {
+        // GIVEN
+        // THIS SETUP
+        createViewModelAndDisregardInit()
+
+        // THIS DATA
+        val row = 2
+        val col = 0
+        val playMoveResult = Error(failure)
+        val expectedUiState = InProgress(emptyGrid)
+        val messageResId = when (failure) {
+            GridError.CELL_ALREADY_TAKEN -> R.string.cell_already_taken
+            else -> R.string.unexpected_error
+        }
+        val errorMessage = "errorMessage"
+
+        // THIS BEHAVIOR
+        every { playMoveUseCase(row, col, any()) } returns playMoveResult
+        every { resourceProvider.getString(messageResId) } returns errorMessage
+
+        // WHEN
+        viewModel.onCellClicked(row, col)
+
+        // THEN
+        // THIS SHOULD HAVE HAPPENED
+        verify {
+            playMoveUseCase(row, col, any())
+            resourceProvider.getString(messageResId)
+        }
+        // THIS SHOULD BE
+        viewModel shouldHaveState expectedUiState
+        viewModel shouldHaveSnackbarMessage errorMessage
+    }
 
     private infix fun BoardViewModel.shouldHaveState(expectedState: GameState) {
         gameState.value shouldBe expectedState
+    }
+
+    private infix fun BoardViewModel.shouldHaveSnackbarMessage(message: String) {
+        viewModel.snackbarMessage.value shouldBe message
     }
 
     private val emptyGrid = List(3) { List<Symbol?>(3) { null } }

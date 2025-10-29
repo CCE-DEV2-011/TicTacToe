@@ -14,6 +14,7 @@
 
 package com.example.tictactoe.features.board
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import com.example.tictactoe.domain.model.Failure
 import com.example.tictactoe.domain.model.GameState
@@ -21,6 +22,8 @@ import com.example.tictactoe.domain.model.GridError
 import com.example.tictactoe.domain.model.RequestResult
 import com.example.tictactoe.domain.usecase.PlayMoveUseCase
 import com.example.tictactoe.domain.usecase.ResetGridUseCase
+import com.example.tictactoe.features.provider.ResourceProvider
+import com.example.tictactoe.ui.R
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,7 +31,11 @@ import kotlinx.coroutines.flow.asStateFlow
 class BoardViewModel(
     resetGrid: ResetGridUseCase,
     private val playMove: PlayMoveUseCase,
+    private val resourceProvider: ResourceProvider,
 ) : ViewModel(), BoardCallback {
+
+    private val _snackbarMessage = MutableStateFlow<String?>(null)
+    val snackbarMessage = _snackbarMessage.asStateFlow()
 
     private val _gameState: MutableStateFlow<GameState>
     val gameState: StateFlow<GameState>
@@ -48,24 +55,31 @@ class BoardViewModel(
                 is RequestResult.Success -> _gameState.value = result.data
                 is RequestResult.Error -> handleMoveFailure(result.error)
             }
-        } ?: run {
-            // TODO toast error
-        }
+        } ?: showSnackbarMessage(R.string.unexpected_error)
     }
 
     private fun handleMoveFailure(error: Failure) {
         when (error) {
-            GridError.CELL_ALREADY_TAKEN -> {
-                // TODO Toast cell already taken
-            }
-            else -> {
-                // TODO Toast unexpected error
-            }
+            GridError.CELL_ALREADY_TAKEN -> showSnackbarMessage(R.string.cell_already_taken)
+            else -> showSnackbarMessage(R.string.unexpected_error)
         }
+    }
+
+    private fun showSnackbarMessage(@StringRes messageId: Int) {
+        showSnackbarMessage(resourceProvider.getString(messageId))
+    }
+
+    private fun showSnackbarMessage(message: String) {
+        _snackbarMessage.value = message
+    }
+
+    override fun dismissSnackbar() {
+        _snackbarMessage.value = null
     }
 
 }
 
 interface BoardCallback {
     fun onCellClicked(row: Int, col: Int)
+    fun dismissSnackbar()
 }

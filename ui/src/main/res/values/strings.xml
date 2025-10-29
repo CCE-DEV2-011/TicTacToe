@@ -5,4 +5,7 @@
     <string name="x_wins">X wins</string>
     <string name="o_wins">O wins</string>
     <string name="draw">It\'s a draw</string>
+    <string name="confirm">Confirm</string>
+    <string name="cell_already_taken">Cell already taken. Choose another one.</string>
+    <string name="unexpected_error">Unexpected error</string>
 </resources>

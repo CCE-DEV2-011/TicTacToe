@@ -12,20 +12,14 @@
 * limitations under the License.
 */
 
-package com.example.tictactoe
+package com.example.tictactoe.ui.atoms
 
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.tictactoe.di.allModules
-import com.example.tictactoe.features.board.BoardScreen
-import org.koin.compose.KoinApplication
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
+import com.example.tictactoe.ui.Dimens.Padding
 
 @Composable
-@Preview
-fun App() = KoinApplication(
-    application = {
-        modules(allModules)
-    },
-) {
-    BoardScreen()
-}
+fun VerticalSpacer(size: Dp = Padding.Default) = Spacer(modifier = Modifier.height(size))

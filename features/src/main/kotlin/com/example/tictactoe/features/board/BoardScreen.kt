@@ -28,9 +28,13 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,7 +54,7 @@ import com.example.tictactoe.domain.repository.Grid
 import com.example.tictactoe.ui.Dimens.Padding
 import com.example.tictactoe.ui.Dimens.Size
 import com.example.tictactoe.ui.R
-import com.example.tictactoe.ui.VerticalSpacer
+import com.example.tictactoe.ui.atoms.VerticalSpacer
 import com.example.tictactoe.ui.theme.Red700
 import com.example.tictactoe.ui.theme.Teal700
 import com.example.tictactoe.ui.theme.TicTacToeTheme
@@ -63,6 +67,7 @@ fun BoardScreen(
 ) {
     BoardView(
         state = viewModel.gameState.collectAsStateWithLifecycle().value,
+        snackbarMessage = viewModel.snackbarMessage.collectAsStateWithLifecycle().value,
         callback = viewModel,
         modifier = modifier,
     )
@@ -71,20 +76,38 @@ fun BoardScreen(
 @Composable
 private fun BoardView(
     state: GameState,
+    snackbarMessage: String?,
     callback: BoardCallback,
     modifier: Modifier = Modifier,
-) = Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(innerPadding)
-            .padding(Padding.Screen),
-        horizontalAlignment = CenterHorizontally,
-        verticalArrangement = Center,
-    ) {
-        HeaderView(state)
-        VerticalSpacer(Padding.XXLarge)
-        BoardContentView(state, callback)
+) {
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(snackbarMessage) {
+        snackbarMessage?.let { message ->
+            val result = snackbarHostState.showSnackbar(message, withDismissAction = true)
+            when (result) {
+                SnackbarResult.ActionPerformed -> Unit
+                SnackbarResult.Dismissed -> callback.dismissSnackbar()
+            }
+        }
+    }
+
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+    ) { innerPadding ->
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(Padding.Screen),
+            horizontalAlignment = CenterHorizontally,
+            verticalArrangement = Center,
+        ) {
+            HeaderView(state)
+            VerticalSpacer(Padding.XXLarge)
+            BoardContentView(state, callback)
+        }
     }
 }
 
@@ -177,6 +200,7 @@ private fun PreviewBoard(
     var state by remember {
         mutableStateOf(InProgress(grid = initialGrid))
     }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val callback = object : BoardCallback {
         override fun onCellClicked(row: Int, col: Int) {
@@ -190,13 +214,20 @@ private fun PreviewBoard(
                         }
                     },
                 )
+            } else {
+                errorMessage = "Cell already taken"
             }
+        }
+
+        override fun dismissSnackbar() {
+            errorMessage = null
         }
     }
 
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         BoardView(
             state = state,
+            snackbarMessage = errorMessage,
             modifier = Modifier.padding(innerPadding),
             callback = callback,
         )
